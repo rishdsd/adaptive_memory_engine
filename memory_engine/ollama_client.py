@@ -18,15 +18,25 @@ class OllamaClient:
         self.base_url = base_url.rstrip("/")
 
     def chat(self, system_prompt: str, user_prompt: str, timeout: int = 300) -> str:
+        return self._request(system_prompt, user_prompt, timeout=timeout, json_mode=False)
+
+    def chat_json(self, system_prompt: str, user_prompt: str, timeout: int = 300) -> str:
+        """Ask Ollama for JSON output; callers must still validate the returned schema."""
+        return self._request(system_prompt, user_prompt, timeout=timeout, json_mode=True)
+
+    def _request(self, system_prompt: str, user_prompt: str, timeout: int, json_mode: bool) -> str:
         body = {
             "model": self.model,
             "stream": False,
+            "think": False,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            "options": {"temperature": 0.2},
+            "options": {"temperature": 0},
         }
+        if json_mode:
+            body["format"] = "json"
         request = urllib.request.Request(
             f"{self.base_url}/api/chat",
             data=json.dumps(body).encode("utf-8"),

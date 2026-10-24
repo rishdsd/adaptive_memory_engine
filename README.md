@@ -76,3 +76,45 @@ The database path can also be passed using the global `--db` option before the s
 - The agent is instructed to use the provided context, but model output is not a proof of correctness. Verify claims against the printed evidence context.
 - Event timestamps are accepted as ISO strings; strict timezone normalization and correction workflows are not yet implemented.
 - No autonomous actions or reminders are executed in this iteration.
+
+## Stage 1: accurate workout-history chat
+
+Stage 1 uses the local LLM only to turn a natural-language message into a constrained JSON intent/query plan. Python validates that plan, reads the SQLite history, computes any result, and formats factual answers deterministically. The model does not generate arbitrary SQL and does not write directly to the database.
+
+The existing `events.payload_json` remains the canonical append-only record. On startup, `memory_engine.workout_data.WorkoutRepository` creates normalized `workout_sessions`, `workout_exercises`, and `exercise_sets` tables and idempotently indexes any existing `gym_session_log` events. Existing records are not deleted or rewritten.
+
+Run the API and open the local chat UI at `http://127.0.0.1:8000/`:
+
+```bash
+uvicorn memory_engine.api:app --reload
+```
+
+You can also call the API directly. Ask a history question (the local Ollama model must be running):
+
+```bash
+curl -s http://127.0.0.1:8000/chat \\
+  -H 'Content-Type: application/json' \\
+  -d '{"question":"What is my best bodyweight pull-up set?"}'
+```
+
+To log a completed workout, send the natural-language message to `/chat`. If it returns `mode: log_confirmation_required`, review the `pending_log` and explicitly confirm it through `/chat/confirm-log`. Only then is a canonical event written and indexed:
+
+```bash
+curl -s http://127.0.0.1:8000/chat/confirm-log \\
+  -H 'Content-Type: application/json' \\
+  -d '{"session_date":"2026-10-19","session_label":"back","exercises":[{"name":"Seated row","sets":[{"reps":12,"load_kg":25},{"reps":12,"load_kg":25},{"reps":12,"load_kg":25}]}],"notes":[]}'
+```
+
+Then ask `/chat` again to retrieve the newly stored entry. The two-step write flow is intentional: model-extracted data is previewed before persistence. Stage 1 currently supports workout-history queries and workout logging; broader goal/event chat queries and Stage 2 recommendations are not yet part of this vertical slice.
+
+### AI engineering decision
+
+This is constrained tool selection, not MCP yet. The LLM produces a small JSON plan from an allowlisted schema; application code validates and executes known operations. MCP is a protocol for exposing tools/resources to compatible AI clients. We should add an MCP adapter only if we later want this same memory/query capability available to multiple MCP-capable clients. It would wrap these existing safe functions, not replace the database or accuracy tests.
+
+### Stage 1 tests
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Tests use a fake planner, so correctness tests do not require Ollama to be running. Live-model evaluation is a separate step because the model can still misclassify or mis-extract a user message.

@@ -1,0 +1,943 @@
+{
+  "model": "qwen3.5:4b",
+  "case_count": 30,
+  "field_correct": {
+    "intent": 30,
+    "query_type": 28,
+    "exercise_name": 24,
+    "session_label": 0,
+    "session_date": 1,
+    "load_type": 28,
+    "include_dates": 30
+  },
+  "field_total": {
+    "intent": 30,
+    "query_type": 30,
+    "exercise_name": 30,
+    "session_label": 1,
+    "session_date": 1,
+    "load_type": 30,
+    "include_dates": 30
+  },
+  "results": [
+    {
+      "id": "pullup_best_01",
+      "message": "What is my best bodyweight pull-up set?",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull ups",
+        "load_type": "bodyweight",
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": "bodyweight",
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 7.202,
+      "errors": []
+    },
+    {
+      "id": "pullup_best_02",
+      "message": "Which pull-up set had the most reps?",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.863,
+      "errors": []
+    },
+    {
+      "id": "pullup_best_03",
+      "message": "What's my pull-up PR?",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.389,
+      "errors": []
+    },
+    {
+      "id": "pullup_best_04",
+      "message": "Tell me my highest number of pull ups in one set, bodyweight only.",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull ups",
+        "load_type": "bodyweight",
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull ups",
+        "session_label": null,
+        "session_date": null,
+        "load_type": "bodyweight",
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.29,
+      "errors": []
+    },
+    {
+      "id": "pullup_best_05",
+      "message": "How many pull ups did I do at most?",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.259,
+      "errors": []
+    },
+    {
+      "id": "pullup_best_06",
+      "message": "Find my best assisted pull-up set.",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull ups",
+        "load_type": "assisted",
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "assisted pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": "assisted",
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.395,
+      "errors": [
+        "exercise_name: expected 'pull ups', got 'assisted pull-up'"
+      ]
+    },
+    {
+      "id": "pullup_best_07",
+      "message": "What was my strongest weighted pull-up set?",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull ups",
+        "load_type": "weighted",
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": "weighted",
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.238,
+      "errors": []
+    },
+    {
+      "id": "pullup_latest_01",
+      "message": "Show me my latest pull-up set.",
+      "expected": {
+        "intent": "query",
+        "query_type": "latest_set",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "latest_set",
+        "exercise_name": "pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.21,
+      "errors": []
+    },
+    {
+      "id": "pullup_latest_02",
+      "message": "What did I do the last time I trained pull ups?",
+      "expected": {
+        "intent": "query",
+        "query_type": "latest_set",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "latest_set",
+        "exercise_name": "pull ups",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.221,
+      "errors": []
+    },
+    {
+      "id": "pullup_latest_03",
+      "message": "Give me my most recent bodyweight pull-up session.",
+      "expected": {
+        "intent": "query",
+        "query_type": "latest_set",
+        "exercise_name": "pull ups",
+        "load_type": "bodyweight",
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "latest_set",
+        "exercise_name": "bodyweight pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.279,
+      "errors": [
+        "exercise_name: expected 'pull ups', got 'bodyweight pull-up'",
+        "load_type: expected 'bodyweight', got None"
+      ]
+    },
+    {
+      "id": "pullup_history_01",
+      "message": "Show me my pull-up history.",
+      "expected": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.277,
+      "errors": []
+    },
+    {
+      "id": "pullup_history_02",
+      "message": "Show me my pull up story with out date",
+      "expected": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": false
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": false,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.235,
+      "errors": []
+    },
+    {
+      "id": "pullup_history_03",
+      "message": "List all my past pull-up sets, but don't include dates.",
+      "expected": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": false
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": false,
+        "clarification": "",
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        }
+      },
+      "seconds": 3.243,
+      "errors": []
+    },
+    {
+      "id": "pullup_history_04",
+      "message": "How have my pull-ups gone over time?",
+      "expected": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull-ups",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.24,
+      "errors": []
+    },
+    {
+      "id": "pullup_history_05",
+      "message": "Pull up history",
+      "expected": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.265,
+      "errors": []
+    },
+    {
+      "id": "pullup_history_06",
+      "message": "Show me only my assisted pull-up history.",
+      "expected": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull ups",
+        "load_type": "assisted",
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "assisted pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": "assisted",
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.345,
+      "errors": [
+        "exercise_name: expected 'pull ups', got 'assisted pull-up'"
+      ]
+    },
+    {
+      "id": "pushup_best_01",
+      "message": "What is my best bodyweight push-up set?",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "push ups",
+        "load_type": "bodyweight",
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": "push-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": "bodyweight",
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.291,
+      "errors": []
+    },
+    {
+      "id": "pushup_history_01",
+      "message": "Show me my push-up history.",
+      "expected": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "push ups",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "push-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.184,
+      "errors": []
+    },
+    {
+      "id": "list_exercises_01",
+      "message": "Which exercises have I logged so far?",
+      "expected": {
+        "intent": "query",
+        "query_type": "list_exercises",
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "list_exercises",
+        "exercise_name": null,
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.197,
+      "errors": []
+    },
+    {
+      "id": "list_exercises_02",
+      "message": "Show me the different movements in my workout records.",
+      "expected": {
+        "intent": "query",
+        "query_type": "list_exercises",
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "list_exercises",
+        "exercise_name": null,
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.184,
+      "errors": []
+    },
+    {
+      "id": "list_sessions_01",
+      "message": "List my recorded workout sessions.",
+      "expected": {
+        "intent": "query",
+        "query_type": "list_sessions",
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "list_sessions",
+        "exercise_name": null,
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.145,
+      "errors": []
+    },
+    {
+      "id": "session_exercises_01",
+      "message": "What exercises did I do on 2026-09-08?",
+      "expected": {
+        "intent": "query",
+        "query_type": "session_exercises",
+        "exercise_name": null,
+        "session_date": "2026-09-08",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "session_exercises",
+        "exercise_name": null,
+        "session_label": null,
+        "session_date": "2026-09-08",
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.473,
+      "errors": []
+    },
+    {
+      "id": "session_exercises_02",
+      "message": "What did I do on back day?",
+      "expected": {
+        "intent": "query",
+        "query_type": "session_exercises",
+        "exercise_name": null,
+        "session_label": "back",
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "list_sessions",
+        "exercise_name": null,
+        "session_label": "back day",
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": "back day",
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.325,
+      "errors": [
+        "query_type: expected 'session_exercises', got 'list_sessions'",
+        "session_label: expected 'back', got 'back day'"
+      ]
+    },
+    {
+      "id": "clarify_exercise_01",
+      "message": "What was my best set?",
+      "expected": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "best_set",
+        "exercise_name": null,
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": "Which exercise would you like to know the best set for?"
+      },
+      "seconds": 3.537,
+      "errors": []
+    },
+    {
+      "id": "log_pullup_01",
+      "message": "I did 8 bodyweight pull-ups in one set. Log this.",
+      "expected": {
+        "intent": "log_workout",
+        "query_type": null,
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "log_workout",
+        "query_type": null,
+        "exercise_name": "bodyweight pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": "bodyweight",
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [
+            {
+              "name": "bodyweight pull-up",
+              "sets": [
+                {
+                  "reps": 8,
+                  "load_kg": null
+                }
+              ]
+            }
+          ],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 4.859,
+      "errors": [
+        "exercise_name: expected None, got 'bodyweight pull-up'",
+        "load_type: expected None, got 'bodyweight'"
+      ]
+    },
+    {
+      "id": "log_pullup_02",
+      "message": "Record 3 sets of pull-ups: 8 bodyweight reps, 6 bodyweight reps, and 5 reps with 10 kg assistance.",
+      "expected": {
+        "intent": "log_workout",
+        "query_type": null,
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "log_workout",
+        "query_type": null,
+        "exercise_name": "pull-ups",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [
+            {
+              "name": "pull-ups",
+              "sets": [
+                {
+                  "reps": 8,
+                  "load_kg": 0
+                },
+                {
+                  "reps": 6,
+                  "load_kg": 0
+                },
+                {
+                  "reps": 5,
+                  "load_kg": 10
+                }
+              ]
+            }
+          ],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 6.104,
+      "errors": [
+        "exercise_name: expected None, got 'pull-ups'"
+      ]
+    },
+    {
+      "id": "unsupported_plan_01",
+      "message": "I plan to try pull-ups tomorrow.",
+      "expected": {
+        "intent": "unsupported",
+        "query_type": null,
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "unsupported",
+        "query_type": null,
+        "exercise_name": "pull-ups",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": "Would you like to log this workout as completed today or tomorrow?"
+      },
+      "seconds": 3.53,
+      "errors": [
+        "exercise_name: expected None, got 'pull-ups'"
+      ]
+    },
+    {
+      "id": "unsupported_topic_01",
+      "message": "Tell me a joke about pull-ups.",
+      "expected": {
+        "intent": "unsupported",
+        "query_type": null,
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "unsupported",
+        "query_type": null,
+        "exercise_name": null,
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.097,
+      "errors": []
+    },
+    {
+      "id": "missing_exercise_01",
+      "message": "Show me my workout history.",
+      "expected": {
+        "intent": "query",
+        "query_type": "list_sessions",
+        "exercise_name": null,
+        "load_type": null,
+        "include_dates": true
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": null,
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": true,
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        },
+        "clarification": ""
+      },
+      "seconds": 3.169,
+      "errors": [
+        "query_type: expected 'list_sessions', got 'exercise_history'"
+      ]
+    },
+    {
+      "id": "pullup_dates_01",
+      "message": "Give me my pull-up history without mentioning when I did each set.",
+      "expected": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull ups",
+        "load_type": null,
+        "include_dates": false
+      },
+      "actual": {
+        "intent": "query",
+        "query_type": "exercise_history",
+        "exercise_name": "pull-up",
+        "session_label": null,
+        "session_date": null,
+        "load_type": null,
+        "include_dates": false,
+        "clarification": "",
+        "log": {
+          "session_date": null,
+          "session_label": null,
+          "exercises": [],
+          "notes": []
+        }
+      },
+      "seconds": 3.215,
+      "errors": []
+    }
+  ]
+}

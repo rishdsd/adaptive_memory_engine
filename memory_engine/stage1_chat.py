@@ -9,26 +9,51 @@ from .db import MemoryStore
 from .ollama_client import OllamaClient
 from .workout_data import WorkoutRepository, normalize_exercise_name
 
-PLANNER_SYSTEM_PROMPT = """You are a strict intent and data extraction component for a personal-history chatbot.
-Use only the user's message to produce one JSON object matching the requested schema. Do not answer
-in prose and do not invent historical facts. Choose intent=query for questions about recorded history,
-intent=log_workout when the user says they completed a workout and wants it remembered, otherwise
-intent=unsupported. For a query, choose query_type from: best_set, latest_set, exercise_history,
-session_exercises, list_exercises, list_sessions. `session_exercises` means list unique exercises
-actually recorded in matching sessions. `list_exercises` means list unique recorded exercises generally.
-Use `load_type=bodyweight` only when explicitly asking for bodyweight; use `assisted` only when asking
-for assisted sets. Do not treat a planned exercise as completed. For logging, extract only explicit
-values, use ISO YYYY-MM-DD for an explicitly stated date, and set omitted date to null. Do not infer
-reps, weights, or exercises. Return exactly the JSON object, with all top-level fields present.
+PLANNER_SYSTEM_PROMPT = """You are a query planner for a personal workout-history application.
+Return exactly one JSON object. Do not answer the user's question and do not invent facts.
+Use the CURRENT USER MESSAGE to identify the request. If the user is clearly continuing a query,
+use the supplied conversation context if present. Do not turn a history question into a log request.
 
-Required object shape:
+Supported intents:
+- query: asks about already-recorded workout history
+- log_workout: says a workout was completed and asks to record/remember it
+- unsupported: neither of the above or insufficient information to classify safely
+
+Supported query_type values:
+- best_set: the highest-rep recorded set for an exercise (unless the user explicitly asks for another metric)
+- latest_set: the latest recorded session/set for an exercise
+- exercise_history: recorded sets/sessions for one exercise over time; includes paraphrases such as "story", "track record", "past sets", or "how has it gone"
+- session_exercises: exercises in a specified session/date
+- list_exercises: distinct exercises across recorded history
+- list_sessions: recorded workout sessions
+
+Fields:
+- exercise_name: extract the exercise as the user named it, or null if not identifiable
+- session_label/session_date: only when specified or clearly inferable from context
+- load_type: "bodyweight", "assisted", or "weighted" only when the user explicitly requests that type; otherwise null
+- include_dates: false only when the user explicitly asks to omit dates; true otherwise
+- clarification: a short question only if an essential parameter is genuinely missing; otherwise empty string
+- log: for log_workout only, extract explicit workout values. Never invent reps/load/date. Omitted date is null.
+
+Important interpretation rules:
+- Synonyms and informal wording should map to the closest supported query type. Do not require exact keywords.
+- "best", "highest reps", "most reps", "PR" map to best_set.
+- "latest", "last time", "most recent" map to latest_set.
+- "history", "story", "past sets", "over time", "progression" map to exercise_history.
+- If a history query names an exercise, do not ask the user to name it again.
+- Do not infer bodyweight/assisted/weighted when not stated. The application applies its own transparent default policy.
+- Do not treat an exercise the user plans to do as completed.
+- Do not produce SQL or answer from memory; Python will query the database.
+
+Required JSON shape:
 {
   "intent": "query|log_workout|unsupported",
   "query_type": "best_set|latest_set|exercise_history|session_exercises|list_exercises|list_sessions|null",
   "exercise_name": "string or null",
   "session_label": "string or null",
   "session_date": "YYYY-MM-DD or null",
-  "load_type": "bodyweight|assisted|null",
+  "load_type": "bodyweight|assisted|weighted|null",
+  "include_dates": true,
   "log": {
     "session_date": "YYYY-MM-DD or null",
     "session_label": "string or null",
@@ -37,10 +62,11 @@ Required object shape:
   },
   "clarification": "short question or empty string"
 }
-For log sets, use these supported measurement keys where explicitly present: reps, load (e.g. bodyweight),
-load_kg, load_kg_per_hand, assistance_kg, machine_level, machine_setting. A set may contain more than
-one supported measurement. If the user did not provide a usable exercise name or any set details, set
-intent=unsupported and ask a clarification. Do not produce SQL.
+
+For logging, supported set keys are reps, load ("bodyweight"), load_kg, load_kg_per_hand,
+assistance_kg, machine_level, machine_setting. Include only explicitly stated values. A set can have
+multiple supported fields. If essential information is missing, return intent=unsupported and ask a
+short clarification. Return valid JSON only.
 """
 
 
@@ -52,70 +78,61 @@ class StageOneChat:
         self.repository = repository
         self.llm = llm
 
-    def _deterministic_query_plan(self, message: str) -> dict[str, Any] | None:
-        """Handle clear history questions without asking the LLM to infer obvious intent."""
-        text = message.casefold()
-        normalized_message = normalize_exercise_name(text)
-
-        # Match against exercise names actually present in the user's history.
+    def _canonical_exercise_name(self, name: str | None) -> str | None:
+        """Resolve an LLM-extracted name against names actually present in the database."""
+        if not name or not str(name).strip():
+            return None
+        requested = normalize_exercise_name(str(name))
         known = self.repository.query({"query_type": "list_exercises"}).get("exercises", [])
-        candidates = []
-        for name in known:
-            key = normalize_exercise_name(str(name))
-            if key and key in normalized_message:
-                candidates.append((len(key), str(name)))
-        if not candidates:
+        exact = [str(item) for item in known if normalize_exercise_name(str(item)) == requested]
+        if len(exact) == 1:
+            return exact[0]
+        # Accept a unique containment match, but avoid guessing when multiple names fit.
+        nearby = [str(item) for item in known
+                  if requested and (requested in normalize_exercise_name(str(item))
+                                    or normalize_exercise_name(str(item)) in requested)]
+        if len(nearby) == 1:
+            return nearby[0]
+        return str(name).strip()
+
+    @staticmethod
+    def _validate_plan(plan: dict[str, Any]) -> dict[str, Any] | None:
+        """Validate planner output before it can reach repository/query or write logic."""
+        intents = {"query", "log_workout", "unsupported"}
+        query_types = {"best_set", "latest_set", "exercise_history", "session_exercises", "list_exercises", "list_sessions"}
+        if plan.get("intent") not in tuple(intents):
             return None
-
-        # Prefer the longest match (e.g. "bench press" over "press").
-        exercise_name = max(candidates, key=lambda item: item[0])[1]
-
-        if re.search(r"\b(best|highest|maximum|max|most reps|personal record|record)\b", text):
-            query_type = "best_set"
-        elif re.search(r"\b(latest|last|most recent)\b", text):
-            query_type = "latest_set"
-        elif re.search(r"\b(history|all sets|every set|progress|over time)\b", text):
-            query_type = "exercise_history"
-        else:
+        if plan.get("intent") == "query" and plan.get("query_type") not in tuple(query_types):
             return None
-
-        if re.search(r"\bbody\s*weight\b", text):
-            load_type = "bodyweight"
-        elif re.search(r"\b(assisted|assistance)\b", text):
-            load_type = "assisted"
-        else:
-            load_type = None
-
-        return {
-            "intent": "query",
-            "query_type": query_type,
-            "exercise_name": exercise_name,
-            "session_label": None,
-            "session_date": None,
-            "load_type": load_type,
-        }
+        if plan.get("load_type") not in (None, "bodyweight", "assisted", "weighted"):
+            plan["load_type"] = None
+        if not isinstance(plan.get("include_dates"), bool):
+            plan["include_dates"] = True
+        if not isinstance(plan.get("exercise_name"), (str, type(None))):
+            plan["exercise_name"] = None
+        return plan
 
     def process(self, message: str) -> dict[str, Any]:
-        # Common, unambiguous history questions should not depend on an LLM classification.
-        plan = self._deterministic_query_plan(message)
-        if plan is None:
-            raw = self.llm.chat_json(
-                PLANNER_SYSTEM_PROMPT,
-                "CURRENT_DATE: " + date.today().isoformat() + "\nUSER_MESSAGE:\n" + message,
-            )
-            try:
-                plan = json.loads(raw)
-            except json.JSONDecodeError:
-                return {"mode": "clarification", "answer": "I couldn't reliably interpret that. Could you rephrase it?"}
+        # The model interprets language; this class validates its plan. No phrase-specific regex routing.
+        raw = self.llm.chat_json(
+            PLANNER_SYSTEM_PROMPT,
+            "CURRENT_DATE: " + date.today().isoformat() + "\nUSER_MESSAGE:\n" + message,
+        )
+        try:
+            plan = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return {"mode": "clarification", "answer": "I couldn't reliably interpret that. Could you rephrase it?"}
         if not isinstance(plan, dict):
             return {"mode": "clarification", "answer": "I couldn't reliably interpret that. Could you rephrase it?"}
+        plan = self._validate_plan(plan)
+        if plan is None:
+            return {"mode": "clarification", "answer": "I couldn't reliably map that request. Could you rephrase it?"}
 
         intent = plan.get("intent")
         if intent == "log_workout":
             log = plan.get("log") or {}
-            # Preserve an explicitly stated bodyweight load if the LLM omitted it.
-            # Restrict this repair to a single-exercise log to avoid applying it to
-            # unrelated exercises in a multi-exercise workout.
+            # Preserve an explicitly stated bodyweight load if the model omitted it, without
+            # assuming that all pull-ups/push-ups are bodyweight.
             exercises = log.get("exercises")
             if (re.search(r"\bbody\s*weight\b", message, re.IGNORECASE)
                     and isinstance(exercises, list) and len(exercises) == 1
@@ -129,15 +146,25 @@ class StageOneChat:
                         if not any(set_data.get(key) is not None for key in load_fields):
                             set_data["load"] = "bodyweight"
             return self._prepare_log(log, plan.get("clarification") or "")
+
         if intent == "query":
-            query_type = plan.get("query_type")
-            if query_type not in {"best_set", "latest_set", "exercise_history", "session_exercises", "list_exercises", "list_sessions"}:
-                return {"mode": "clarification", "answer": "I couldn't map that to a supported history query. Could you rephrase it?"}
-            if query_type in {"best_set", "latest_set", "exercise_history"} and not str(plan.get("exercise_name") or "").strip():
-                return {"mode": "clarification", "answer": "Which exercise should I look up?"}
+            query_type = plan["query_type"]
+            if query_type in {"best_set", "latest_set", "exercise_history"}:
+                canonical = self._canonical_exercise_name(plan.get("exercise_name"))
+                if not canonical:
+                    return {"mode": "clarification", "answer": "Which exercise should I look up?"}
+                plan["exercise_name"] = canonical
+            # User experience policy: without an explicit load filter, a best-set query
+            # reports the best set in each load category separately rather than comparing
+            # incomparable bodyweight, assisted, and weighted sets as one number.
+            if query_type == "best_set" and plan.get("load_type") is None:
+                plan["group_by_load"] = True
+            plan["include_dates"] = bool(plan.get("include_dates", True))
             result = self.repository.query(plan)
+            result["include_dates"] = plan["include_dates"]
             return {"mode": "history_answer", "answer": self._format_result(result), "result": result,
                     "source": "sqlite_workout_history"}
+
         clarification = str(plan.get("clarification") or "").strip()
         return {"mode": "clarification", "answer": clarification or
                 "I can answer questions about recorded workout history or help log a completed workout. What would you like to look up or record?"}
@@ -208,22 +235,40 @@ class StageOneChat:
             parts.append(f"machine level {set_data['machine_level']}")
         if set_data.get("machine_setting") is not None:
             parts.append(f"machine setting {set_data['machine_setting']}")
+        has_load = any(set_data.get(key) is not None for key in
+                       ("load", "load_kg", "load_kg_per_hand", "assistance_kg"))
+        if set_data.get("reps") is not None and not has_load:
+            parts.append("load not recorded")
         return ", ".join(parts) if parts else "measurements not recorded"
 
     @classmethod
     def _format_result(cls, result: dict[str, Any]) -> str:
         kind = result.get("query_type")
         if kind == "best_set":
+            grouped = result.get("best_sets_by_load_type")
+            if grouped is not None:
+                if not grouped:
+                    return f"I couldn't find recorded sets for {result.get('exercise_name')} matching those filters."
+                lines = [f"Your best recorded {result.get('exercise_name')} set by load type:"]
+                for category, best in grouped.items():
+                    date_text = f" on {best['date']}" if result.get("include_dates", True) else ""
+                    lines.append(f"- {category.replace('_', ' ')}: {cls._format_set(best)}{date_text}")
+                lines.append("These categories are shown separately because assisted, bodyweight, and weighted sets are not directly comparable.")
+                return "\n".join(lines)
             best = result.get("best_set")
             if not best:
                 return f"I couldn't find recorded sets for {result.get('exercise_name')} matching those filters."
-            return (f"Your best recorded set for {best['exercise_name']} was {cls._format_set(best)} on {best['date']}. "
+            date_text = f" on {best['date']}" if result.get("include_dates", True) else ""
+            return (f"Your best recorded set for {best['exercise_name']} was {cls._format_set(best)}{date_text}. "
                     "This is the best among the matching records in the database, not a live fitness assessment.")
         if kind == "latest_set":
             sets = result.get("sets") or []
             if not sets:
                 return f"I couldn't find recorded sets for {result.get('exercise_name')}."
-            lines = [f"Your latest recorded {result['exercise_name']} session is {result['latest_date']}:"]
+            if result.get("include_dates", True):
+                lines = [f"Your latest recorded {result['exercise_name']} session is {result['latest_date']}:"]
+            else:
+                lines = [f"Your latest recorded {result['exercise_name']} session:"]
             lines.extend(f"Set {s.get('set_number', i)}: {cls._format_set(s)}" for i, s in enumerate(sets, 1))
             return "\n".join(lines)
         if kind == "exercise_history":
@@ -231,7 +276,10 @@ class StageOneChat:
             if not records:
                 return f"I couldn't find recorded sets for {result.get('exercise_name')}."
             lines = [f"Recorded history for {result.get('exercise_name')}:"]
-            lines.extend(f"{r['date']}: Set {r.get('set_number', '?')} — {cls._format_set(r)}" for r in records)
+            if result.get("include_dates", True):
+                lines.extend(f"{r['date']}: Set {r.get('set_number', '?')} — {cls._format_set(r)}" for r in records)
+            else:
+                lines.extend(f"Set {r.get('set_number', '?')} — {cls._format_set(r)}" for r in records)
             return "\n".join(lines)
         if kind in {"session_exercises", "list_exercises"}:
             exercises = result.get("exercises") or []
@@ -240,8 +288,10 @@ class StageOneChat:
             scope = result.get("filters", {})
             if scope.get("session_label"):
                 intro = f"Exercises found in recorded sessions matching '{scope['session_label']}':"
-            elif scope.get("session_date"):
+            elif scope.get("session_date") and result.get("include_dates", True):
                 intro = f"Exercises recorded on {scope['session_date']}:"
+            elif scope.get("session_date"):
+                intro = "Exercises recorded in the requested session:"
             else:
                 intro = "Exercises present in your recorded workout history:"
             return intro + "\n- " + "\n- ".join(exercises)
@@ -252,6 +302,10 @@ class StageOneChat:
             lines = [f"Found {len(sessions)} recorded workout session(s):"]
             for session in sessions:
                 names = ", ".join(ex["name"] for ex in session["exercises"])
-                lines.append(f"{session['date']} ({session['session_label'] or 'label not recorded'}): {names or 'no exercises recorded'}")
+                label = session['session_label'] or 'label not recorded'
+                if result.get("include_dates", True):
+                    lines.append(f"{session['date']} ({label}): {names or 'no exercises recorded'}")
+                else:
+                    lines.append(f"{label}: {names or 'no exercises recorded'}")
             return "\n".join(lines)
         return "I couldn't answer that from the supported workout history queries."

@@ -233,6 +233,17 @@ class WorkoutRepository:
                     "record_completeness": session["record_completeness"], "exercises": exercises})
             return results
 
+    @staticmethod
+    def _load_category(set_data: dict[str, Any]) -> str:
+        """Classify only from recorded measurements; never assume missing load means bodyweight."""
+        if set_data.get("assistance_kg") is not None:
+            return "assisted"
+        if set_data.get("load_kg") is not None or set_data.get("load_kg_per_hand") is not None:
+            return "weighted"
+        if set_data.get("load") == "bodyweight":
+            return "bodyweight"
+        return "load_not_recorded"
+
     def query(self, plan: dict[str, Any]) -> dict[str, Any]:
         query_type = plan.get("query_type")
         exercise_name = str(plan.get("exercise_name") or "").strip()
@@ -265,15 +276,27 @@ class WorkoutRepository:
                 if exercise_key and normalize_exercise_name(exercise["name"]) != exercise_key:
                     continue
                 for set_data in exercise["sets"]:
-                    if load_type == "bodyweight" and set_data.get("load") != "bodyweight":
+                    if load_type == "bodyweight" and self._load_category(set_data) != "bodyweight":
                         continue
-                    if load_type == "assisted" and set_data.get("assistance_kg") is None:
+                    if load_type == "assisted" and self._load_category(set_data) != "assisted":
+                        continue
+                    if load_type == "weighted" and self._load_category(set_data) != "weighted":
                         continue
                     matches.append({"date": session["date"], "session_id": session["session_id"],
                         "session_label": session["session_label"], "exercise_name": exercise["name"], **set_data})
 
         if query_type == "best_set":
             with_reps = [m for m in matches if isinstance(m.get("reps"), int)]
+            if plan.get("group_by_load") and load_type is None:
+                grouped: dict[str, dict[str, Any]] = {}
+                for item in with_reps:
+                    category = self._load_category(item)
+                    previous = grouped.get(category)
+                    if previous is None or (item["reps"], item["date"]) > (previous["reps"], previous["date"]):
+                        grouped[category] = item
+                return {"query_type": query_type, "exercise_name": exercise_name,
+                        "load_type": load_type, "best_sets_by_load_type": grouped,
+                        "matching_set_count": len(matches)}
             result = max(with_reps, key=lambda m: (m["reps"], m["date"]), default=None)
             return {"query_type": query_type, "exercise_name": exercise_name,
                     "load_type": load_type, "best_set": result, "matching_set_count": len(matches)}
